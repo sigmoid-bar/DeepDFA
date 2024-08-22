@@ -33,3 +33,14 @@ dependencies:
     - jsonargparse[signatures]
     - fastparquet
     - gdown
+    # these are dependencies of neural-subgraph-learning-GNN project
+    - deepsnap
+    - matplotlib
+    - networkx
+    - scikit-learn
+    - seaborn
+    - torch_geometric
+    - test_tube
+    - xgboost
+    - torch_scatter
+    - torch_sparse
