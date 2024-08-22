@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/cuda:12.3.1-runtime-ubuntu22.04
+FROM nvcr.io/nvidia/cuda:12.3.1-devel-ubuntu22.04
 
 # Install dependencies
 RUN apt clean && \
@@ -21,6 +21,7 @@ WORKDIR /DeepDFA
 COPY environment.yml .
 RUN conda env create -f environment.yml && \
     conda init bash && \
+    conda init zsh && \
     echo "conda activate deepdfa" >> $HOME/.bashrc
 ENV LD_LIBRARY_PATH /opt/conda/envs/deepdfa/lib:$LD_LIBRARY_PATH
 ENV PYTHONPATH /DeepDFA/DDFA:$PYTHONPATH
