@@ -183,7 +183,7 @@ class MyLightningCLI(LightningCLI):
         logger.info("load ckpt:%s", ckpt_path)
         metrics = self.trainer.validate(self.model, self.datamodule, ckpt_path=ckpt_path)
         logger.info("final val result: %s", metrics)
-        nni.report_final_result(metrics[0]["val_F1Score"])
+        nni.report_final_result(metrics[0]["val_BinaryF1Score"])
 
     def after_validate(self):
         self.unlink_log()
