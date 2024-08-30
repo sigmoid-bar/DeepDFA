@@ -345,7 +345,7 @@ class BaseModule(pl.LightningModule):
         #     self.test_every_metrics.reset()
         print("intermediate result:", ld)
         # if self.hparams.tune_nni:
-        nni.report_intermediate_result(ld["val_F1Score"].cpu().item())
+        nni.report_intermediate_result(ld["val_BinaryF1Score"].cpu().item())
     
     #def test_epoch_end(self, outputs):
     def on_test_epoch_end(self):
