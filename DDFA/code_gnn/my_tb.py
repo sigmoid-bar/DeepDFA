@@ -1,7 +1,7 @@
-from pytorch_lightning.utilities.cli import LOGGER_REGISTRY
+#from pytorch_lightning.utilities.cli import LOGGER_REGISTRY
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
-@LOGGER_REGISTRY
+#@LOGGER_REGISTRY
 class MyTensorBoardLogger(TensorBoardLogger):
     """Custom subclass of TensorBoardLogger with defaults set."""
     def __init__(self, save_dir=".", default_hp_metric=False, *args, **kwargs):

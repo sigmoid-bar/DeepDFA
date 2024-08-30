@@ -8,7 +8,7 @@ from torch import nn
 
 from code_gnn.models.base_module import BaseModule
 
-from pytorch_lightning.utilities.cli import MODEL_REGISTRY
+#from pytorch_lightning.utilities.cli import MODEL_REGISTRY
 
 import logging
 
@@ -18,7 +18,7 @@ allfeats = [
     "api", "datatype", "literal", "operator",
 ]
 
-@MODEL_REGISTRY
+#@MODEL_REGISTRY
 class FlowGNNGGNNModule(BaseModule):
     def __init__(self,
                 feat,

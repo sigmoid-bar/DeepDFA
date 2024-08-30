@@ -3,7 +3,8 @@ import re
 import sys
 import dgl
 import numpy as np
-from pytorch_lightning.utilities.cli import LightningCLI
+#from pytorch_lightning.utilities.cli import LightningCLI
+from pytorch_lightning.cli import LightningCLI
 import tqdm
 from code_gnn.models.flow_gnn.ggnn import FlowGNNGGNNModule
 from code_gnn.my_tb import MyTensorBoardLogger
@@ -16,7 +17,8 @@ import warnings
 import torch as th
 import nni
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.utilities.cli import SaveConfigCallback
+#from pytorch_lightning.utilities.cli import SaveConfigCallback
+from pytorch_lightning.cli import SaveConfigCallback
 from silence_tensorflow import silence_tensorflow
 silence_tensorflow()
 import os
@@ -315,10 +317,13 @@ def get_coverage(ds):
 if __name__ == "__main__":
     try:
         setup_transient_log()
+        config_args = {}
+        config_args['overwrite']=True
+
         MyLightningCLI(FlowGNNGGNNModule, BigVulDatasetLineVDDataModule, parser_kwargs={
             "fit": {"default_config_files": ["configs/config_default.yaml"]},
             "test": {"default_config_files": ["configs/config_default.yaml"]},
-        }, save_config_overwrite=True)
+        }, save_config_kwargs=config_args)
     except QuitEarlyException:
         logger.info("Quitting early")
     except:

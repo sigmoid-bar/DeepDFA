@@ -34,10 +34,10 @@ class BaseModule(pl.LightningModule):
         # https://torchmetrics.readthedocs.io/en/stable/pages/classification.html
         metrics = torchmetrics.MetricCollection(
             [
-                torchmetrics.Accuracy(),
-                torchmetrics.Precision(),
-                torchmetrics.Recall(),
-                torchmetrics.F1Score(),
+                torchmetrics.Accuracy(task="binary"),
+                torchmetrics.Precision(task="binary"),
+                torchmetrics.Recall(task="binary"),
+                torchmetrics.F1Score(task="binary"),
             ]
         )
         self.train_metrics = metrics.clone(prefix="train_")
@@ -56,11 +56,11 @@ class BaseModule(pl.LightningModule):
         # self.val_metrics_negative = metrics.clone(prefix="val_0_")
         self.test_metrics_negative = metrics.clone(prefix="test_0_")
         
-        self.test_pr_curve = torchmetrics.PrecisionRecallCurve()
-        self.test_pr_curve_bin = torchmetrics.BinnedPrecisionRecallCurve(1)
+        self.test_pr_curve = torchmetrics.PrecisionRecallCurve(task="binary")
+        #self.test_pr_curve_bin = torchmetrics.BinnedPrecisionRecallCurve(1)
         self.test_preds = torchmetrics.CatMetric()
         self.test_labels = torchmetrics.CatMetric()
-        self.test_confmat = torchmetrics.ConfusionMatrix(num_classes=2)
+        self.test_confmat = torchmetrics.ConfusionMatrix(task="binary",num_classes=2)
         
         self.label_proportion = nn.ModuleDict({partition + "_label_proportion": torchmetrics.MeanMetric() for partition in ["train", "val", "test"]})
         self.prediction_proportion = nn.ModuleDict({partition + "_prediction_proportion": torchmetrics.MeanMetric() for partition in ["train", "val", "test"]})
@@ -322,7 +322,8 @@ class BaseModule(pl.LightningModule):
         self.test_preds.update(out)
         self.test_labels.update(label)
         
-    def training_epoch_end(self, outputs):
+    #def training_epoch_end(self, outputs):
+    def on_training_epoch_end(self):
         self.log_dict(self.train_metrics.compute(), on_step=False, on_epoch=True)
         # self.log_dict(self.train_metrics_positive.compute(), on_step=False, on_epoch=True)
         # self.log_dict(self.train_metrics_negative.compute(), on_step=False, on_epoch=True)
@@ -330,7 +331,8 @@ class BaseModule(pl.LightningModule):
         # self.train_metrics_positive.reset()
         # self.train_metrics_negative.reset()
     
-    def validation_epoch_end(self, outputs):
+    #def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         ld = self.val_metrics.compute()
         self.log_dict(ld, on_step=False, on_epoch=True)
         # self.log_dict(self.val_metrics_positive.compute(), on_step=False, on_epoch=True)
@@ -345,7 +347,8 @@ class BaseModule(pl.LightningModule):
         # if self.hparams.tune_nni:
         nni.report_intermediate_result(ld["val_F1Score"].cpu().item())
     
-    def test_epoch_end(self, outputs):
+    #def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self):
         self.log_dict(self.test_metrics.compute(), on_step=False, on_epoch=True)
         self.log_dict(self.test_metrics_positive.compute(), on_step=False, on_epoch=True)
         self.log_dict(self.test_metrics_negative.compute(), on_step=False, on_epoch=True)
@@ -357,8 +360,8 @@ class BaseModule(pl.LightningModule):
 
         precision, recall, thresholds = self.test_pr_curve(preds, labels)
         pd.DataFrame({"precision": precision.tolist(), "recall": recall.tolist(), "thresholds": thresholds.tolist() + [1]}).to_csv("pr.csv")
-        precision_bin, recall_bin, thresholds_bin = self.test_pr_curve_bin(preds, labels)
-        pd.DataFrame({"precision": precision_bin.tolist(), "recall": recall_bin.tolist(), "thresholds": thresholds_bin.tolist() + [1]}).to_csv("pr_binned.csv")
+        #precision_bin, recall_bin, thresholds_bin = self.test_pr_curve_bin(preds, labels)
+        #pd.DataFrame({"precision": precision_bin.tolist(), "recall": recall_bin.tolist(), "thresholds": thresholds_bin.tolist() + [1]}).to_csv("pr_binned.csv")
 
         preds, labels = preds.cpu().numpy(), labels.cpu().numpy()
         preds = preds > 0.5

@@ -3,17 +3,27 @@ from sastvd.linevd.dataset import BigVulDatasetLineVD
 
 from torch.utils.data import Subset
 import pytorch_lightning as pl
-from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
+#from pytorch_lightning.utilities.cli import DATAMODULE_REGISTRY
 from dgl.dataloading import GraphDataLoader
 from torchsampler import ImbalancedDatasetSampler
 
 import logging
-
+import argparse
+# neural subgraph project path is mapped here via singularity
+import sys
+import os
+sys.path.insert(0, '/neural-subgraph-learning-GNN')
+import torch
+from common import models
+from common import utils
+from subgraph_mining.config import parse_decoder
+from subgraph_matching.config import parse_encoder
+from subgraph_mining.decoder import pattern_growth
 
 logger = logging.getLogger(__name__)
 
 
-@DATAMODULE_REGISTRY
+#@DATAMODULE_REGISTRY
 class BigVulDatasetLineVDDataModule(pl.LightningDataModule):
     """Pytorch Lightning Datamodule for Bigvul."""
 
@@ -140,19 +150,79 @@ class BigVulDatasetLineVDDataModule(pl.LightningDataModule):
             num_workers=self.test_workers
         )
 
+def init_model(task, args):
+  if args.method_type == "end2end":
+    model = models.End2EndOrder(1, args.hidden_dim, args)
+  elif args.method_type == "mlp":
+    model = models.BaselineMLP(1, args.hidden_dim, args)
+  else:
+    model = models.OrderEmbedder(1, args.hidden_dim, args)
+  model.to(utils.get_device())
+  model.eval()
+  # strict=False allows loading partial model without all the keys in the state_dict
+  model.load_state_dict(torch.load(args.model_path, map_location=utils.get_device()),
+      strict=False)
+  return model
 
-def test_dm():
+def test_dm(args, task):
+    import networkx as nx
+    args.model_path = "/neural-subgraph-learning-GNN/ckpt/model.pt"
+    args.conv_type = "GCN"
+    args.n_trials = 10
+    args.method_type = "order"
+    print("Arguments : {}".format(args))
+    model_instance = init_model(task, args)
+    print("Model instance created to count motifs")
+
     data = BigVulDatasetLineVDDataModule(
         batch_size=256,
-        methodlevel=False,
+        #methodlevel=False,
         gtype="cfg",
-        feat="_ABS_DATAFLOW_datatype_all",
-        cache_all=False,
+        #feat="_ABS_DATAFLOW_datatype_all",
+        feat="_ABS_DATAFLOW_datatype_all_limitall_1_limitsubkeys_1",
+        #cache_all=False,
         undersample=True,
-        filter_cwe=[],
+        #filter_cwe=[],
         sample_mode=False,
-        use_cache=True,
-        train_workers=0,
-        split="random",
+        #use_cache=True,
+        #train_workers=0,
+        #split="random",
+        split="fixed",
+        label_style="graph",
+        dsname="bigvul"
     )
-    print(data)
+
+    #import code
+    print("Processing the Validation dataloader")
+    val_loader = data.val_dataloader()
+    count = 0
+    for i in val_loader:
+      #[Graph,unknown]
+      #print(type(i[0]))
+      g = i[0]
+      print(g)
+      #print("nodes")
+      #print(g.nodes)
+      #print("edges")
+      #print(g.edges)
+      #print("node data")
+      #print(g.ndata)
+      #print("edge data")
+      #print(g.edata)
+      #code.interact(local=locals())
+      g_nx = g.to_networkx()
+      model_count, emb = pattern_growth(model_instance, [g_nx], task, args)
+      print("Result={}".format(model_count))
+      print("Embeddings : {}".format(emb))
+      key_count = len(model_count.keys())
+      count += 1
+      if (count == 3):
+        break
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Decoder arguments')
+  parse_encoder(parser)
+  parse_decoder(parser)
+  args = parser.parse_args()
+  task = 'graph'
+  test_dm(args, task)
