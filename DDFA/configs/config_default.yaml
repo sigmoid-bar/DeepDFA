@@ -42,7 +42,7 @@ trainer:
   #resume_from_checkpoint: null
   #See https://github.com/Lightning-AI/pytorch-lightning/pull/10061
   detect_anomaly: true
-  accumulate_grad_batches: null
+  #accumulate_grad_batches: null
   reload_dataloaders_every_n_epochs: 1
 optimizer:
   class_path: torch.optim.Adam
